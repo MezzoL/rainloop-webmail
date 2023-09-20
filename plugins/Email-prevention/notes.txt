@@ -1,1 +1,0 @@
-The actual event name (filter.send-email) and the Notifications (\RainLoop\Notifications::SendError and \RainLoop\Notifications::AccountNotAllowed) are placeholders. You'll need to replace them with the actual event and notification names used by RainLoop.
