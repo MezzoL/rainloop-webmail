@@ -4,24 +4,27 @@ class BlockSendEmailPlugin extends \RainLoop\Plugins\AbstractPlugin
 {
     public function Init()
     {
-        $this->addHook('filter.send-email', 'FilterSendEmail');
+        $this->addHook('filter.smtp-credentials', 'FilterSmtpCredentials');
     }
 
     /**
-     * @param string $sLogin
+     * @param \RainLoop\Model\Account $oAccount
+     * @param array $aSmtpCredentials
      *
      * @throws \RainLoop\Exceptions\ClientException
      */
-    public function FilterSendEmail(&$sLogin)
+    public function FilterSmtpCredentials($oAccount, &$aSmtpCredentials)
     {
-        if (empty($sLogin))
+        if ($oAccount instanceof \RainLoop\Model\Account)
         {
-            $sExceptions = \trim($this->Config()->Get('plugin', 'exceptions', ''));
-            if (0 === \strlen($sExceptions) || !\RainLoop\Plugins\Helper::ValidateWildcardValues($sLogin, $sExceptions))
+            $sLogin = $oAccount->Login();
+            if (empty($sLogin))
             {
-                throw new \RainLoop\Exceptions\ClientException(
-                    $this->Config()->Get('plugin', 'send_error', true) ?
-                        \RainLoop\Notifications::SendError : \RainLoop\Notifications::AccountNotAllowed);
+                $sExceptions = \trim($this->Config()->Get('plugin', 'exceptions', ''));
+                if (0 === \strlen($sExceptions) || !\RainLoop\Plugins\Helper::ValidateWildcardValues($sLogin, $sExceptions))
+                {
+                    throw new \RainLoop\Exceptions\ClientException(\RainLoop\Notifications::AuthError);
+                }
             }
         }
     }
@@ -32,10 +35,6 @@ class BlockSendEmailPlugin extends \RainLoop\Plugins\AbstractPlugin
     public function configMapping()
     {
         return array(
-            \RainLoop\Plugins\Property::NewInstance('send_error')->SetLabel('Send Error')
-                ->SetType(\RainLoop\Enumerations\PluginPropertyType::BOOL)
-                ->SetDescription('Throw a send error instead of an access error.')
-                ->SetDefaultValue(true),
             \RainLoop\Plugins\Property::NewInstance('exceptions')->SetLabel('Exceptions')
                 ->SetType(\RainLoop\Enumerations\PluginPropertyType::STRING_TEXT)
                 ->SetDescription('Exceptions for send block, space as delimiter, wildcard supported.')
